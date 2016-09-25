@@ -4,8 +4,9 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
-    "connect": "^3.5.0",
-    "http-proxy": "^1.15.1"
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "request": "^2.75.0"
   },
   "devDependencies": {},
   "scripts": {

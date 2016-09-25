@@ -1,40 +1,68 @@
-var http = require('http'),
-    httpProxy = require('http-proxy');
+var http = require('http')
+var request = require("request")
+var express = require("express")
+var bodyParser = require('body-parser')
+var jsonParser = bodyParser.json()
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
+var app = express();
+app.set('port', process.env.PORT || 8008);
+app.enable('verbose errors');
 
-var proxy = httpProxy.createProxyServer();
+app.use(express.query());
+app.use(urlencodedParser)
+app.use(jsonParser)
 
-http.createServer(function (req, res) {
-  var target = req.url
+var defaultResponse = {
+  "LicenseResult": 1,
+  "LicenseValue": 100,
+  "Module": 2
+}
+
+app.use("*", function(req, res, next) {
+  console.log(req.method + " : " + req.url)
+  var contentType = req.headers['content-type'] || '',
+      mime = contentType.split(';')[0];
+  var target = req.originalUrl
   if(target.toLowerCase().indexOf("http")== -1){
     target = "http://" + req.headers.host + target
   }
-  console.log(target, req.method)
-  proxy.web(req, res, {
-    target: target
-  });
-}).listen(8008);
-
-proxy.on('proxyRes', function (proxyRes, req, res) {
-  var _write = res.write;
-  res.write = function (data) {
-    try{
-      var tmpData = JSON.parse(data)
-      if(tmpData.LicenseResult && tmpData.LicenseResult != 1 ){
-        tmpData.LicenseResult = 1
-      }
-      var rdata = new Buffer(JSON.stringify(tmpData))
-    }catch(e){
-      var rdata = data
+  if (req.method == 'POST' || req.method == 'PUT') {
+    var options = {
+      headers: req.headers,
+      url: target
     }
-    _write.call(res, rdata);
+    if(mime.indexOf('x-www-form-urlencoded') != -1){
+      options["form"] = req.body
+    }else if(mime.indexOf('form-data') != -1){
+      options["formData"] = req.body
+    }
+    request.post(options, function(err, hostres, body){
+      if (!err && hostres.statusCode == 200) {
+        var rdata = data = hostres.body.trim()
+        console.log(data)
+        try{
+          var rdata = JSON.parse(data)
+          if(rdata.LicenseResult != 'undefined' && rdata.LicenseResult != 1 ){
+            rdata.LicenseResult = 1
+          }
+        }catch(e){
+          console.log("json format error")
+        }
+        res.json(rdata)
+      }else{
+        console.log(err)
+        res.json(defaultResponse)
+      }
+    })
+  }else if (req.method === 'GET' || req.method === 'HEAD') {
+    request.get(target).pipe(res)
   }
-});
+})
 
 
-proxy.on('error', function (err, req, res) {
-  res.writeHead(500, {
-    'Content-Type': 'application/json; charset=utf-8'
-  });
+var server = app.listen(app.get('port'), function () {
+  var host = server.address().address;
+  var port = server.address().port;
 
-  res.end('Something went wrong. And we are reporting a custom error message.');
+  console.log('Example app listening at http://%s:%s', host, port);
 });
