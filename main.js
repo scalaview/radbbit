@@ -4,9 +4,13 @@ var http = require('http'),
 var proxy = httpProxy.createProxyServer();
 
 http.createServer(function (req, res) {
-  console.log(req.url, req.method)
+  var target = req.url
+  if(target.toLowerCase().indexOf("http")== -1){
+    target = "http://" + req.headers.host + target
+  }
+  console.log(target, req.method)
   proxy.web(req, res, {
-    target: "http://api.u01.cnfth.com/"
+    target: target
   });
 }).listen(8008);
 
