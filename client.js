@@ -38,7 +38,19 @@ app.use("*", function(req, res, next) {
       options["formData"] = req.body
     }
     request.post(options, function(err, hostres, body){
-      res.pipe(hostres)
+      if (!err && hostres.statusCode == 200) {
+        var rdata = data = hostres.body.trim()
+        console.log(data)
+        try{
+          var rdata = JSON.parse(data)
+        }catch(e){
+          console.log("json format error")
+        }
+        res.json(rdata)
+      }else{
+        console.log(err)
+        res.json(defaultResponse)
+      }
     })
   }else if (req.method === 'GET' || req.method === 'HEAD') {
     request.get(target).pipe(res)
