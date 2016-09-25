@@ -58,6 +58,11 @@ app.use("*", function(req, res, next) {
 })
 
 
+app.use(function(err, req, res, next){
+  console.log(err)
+  res.status(err.status || 500);
+});
+
 var server = app.listen(app.get('port'), function () {
   var host = server.address().address;
   var port = server.address().port;
