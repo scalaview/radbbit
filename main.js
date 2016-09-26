@@ -46,6 +46,9 @@ app.use("*", function(req, res, next) {
           if(rdata.LicenseResult != 'undefined' && rdata.LicenseResult != 1 ){
             rdata.LicenseResult = 1
           }
+          if(rdata.LicenseValue != 'undefined'){
+            rdata.LicenseValue = 365
+          }
         }catch(e){
           console.log("json format error")
         }
